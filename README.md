@@ -72,6 +72,21 @@ Projected Monthly:  $264.96/month 💰
 
 ---
 
+## 🛠️ Consulting & Implementation
+Need this implemented at scale in your organization? I provide:
+*   **Custom Infrastructure Audits**: Find where your EKS cluster is bleeding money.
+*   **SOC2 Hardening**: Turn this blueprint into a fully compliant enterprise environment.
+*   **Custom Tooling**: Build specific automation for your unique AI workloads.
+
+**[Contact Me via GitHub Profile](https://github.com/gireeshgaonkar) or Open an Issue to discuss a project.**
+
+---
+
+## 🖥️ Dashboard (Coming Soon)
+We are currently building a **Managed Cost Dashboard** to visualize these savings in real-time across multiple clusters. Stay tuned!
+
+---
+
 ## 👨‍💻 Author
 **Gireesh Gaonkar**
 *DevOps & Cloud Infrastructure Architect*
