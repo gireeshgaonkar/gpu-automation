@@ -1,0 +1,77 @@
+name: 'Deploy AI-Inference Blueprint'
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write # Required for OIDC authentication to AWS
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform & EKS Setup'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Plan
+      run: terraform plan -input=false
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve -input=false
+
+  kubernetes:
+    name: 'K8s Config & Karpenter'
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Update Kubeconfig
+      run: aws eks update-kubeconfig --name ai-inference-cluster --region us-west-2
+
+    - name: Apply Karpenter Manifests
+      run: |
+        # Use envsubst to inject the cluster name into the manifests
+        export cluster_name="ai-inference-cluster"
+        envsubst < k8s-manifests/gpu-nodepool.yaml | kubectl apply -f -
+        
+    - name: Apply Demo Deployment
+      run: kubectl apply -f k8s-manifests/inference-demo.yaml
+
+    - name: Run Cost Watcher
+      run: |
+        pip install -r scripts/requirements.txt
+        python scripts/cost-watcher.py

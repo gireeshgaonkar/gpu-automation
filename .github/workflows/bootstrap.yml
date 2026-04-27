@@ -1,0 +1,56 @@
+name: 'Bootstrap OIDC'
+
+on:
+  workflow_dispatch: # Run this manually once
+    inputs:
+      github_repo:
+        description: 'The GitHub repository (owner/repo)'
+        required: true
+        default: 'your-username/your-repo'
+      aws_region:
+        description: 'AWS Region'
+        required: true
+        default: 'us-west-2'
+
+jobs:
+  bootstrap:
+    name: 'Setup OIDC Provider'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform/bootstrap
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials (Using Static Secrets)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ github.event.inputs.aws_region }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Apply
+      run: |
+        terraform apply -auto-approve \
+          -var="github_repo=repo:${{ github.event.inputs.github_repo }}" \
+          -var="region=${{ github.event.inputs.aws_region }}"
+
+    - name: Get Role ARN
+      run: |
+        echo "OIDC_ROLE_ARN=$(terraform output -raw role_arn)" >> $GITHUB_ENV
+        echo "---------------------------------------------------"
+        echo "SUCCESS! Your OIDC Role is ready."
+        echo "Role ARN: $(terraform output -raw role_arn)"
+        echo "---------------------------------------------------"
+        echo "Next steps:"
+        echo "1. Add the Role ARN to your GitHub Secrets as AWS_ROLE_ARN."
+        echo "2. Switch your deploy.yml to use OIDC."
+        echo "3. DELETE your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets."

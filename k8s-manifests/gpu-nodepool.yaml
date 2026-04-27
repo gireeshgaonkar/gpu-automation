@@ -1,0 +1,50 @@
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: gpu-spot
+spec:
+  template:
+    spec:
+      requirements:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot"]
+        - key: "node.kubernetes.io/instance-category"
+          operator: In
+          values: ["g", "p"]
+        - key: "karpenter.k8s.aws/instance-family"
+          operator: In
+          values: ["g4dn", "g5", "p3"]
+      taints:
+        - key: nvidia.com/gpu
+          value: "true"
+          effect: NoSchedule
+      nodeClassRef:
+        name: default-gpu
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    expireAfter: 720h # 30 days
+  limits:
+    cpu: 100
+    memory: 400Gi
+    nvidia.com/gpu: 10
+---
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: default-gpu
+spec:
+  amiFamily: AL2 # Amazon Linux 2 with NVIDIA drivers pre-installed
+  role: "KarpenterNodeRole-${cluster_name}" # This matches the IAM role created in Terraform
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "${cluster_name}"
+  securityGroupSelectorTerms:
+    - tags:
+        kubernetes.io/cluster/${cluster_name}: "owned"
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true

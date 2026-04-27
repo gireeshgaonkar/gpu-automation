@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-inference-demo
+spec:
+  replicas: 0 # Start at zero to demonstrate scale-to-one
+  selector:
+    matchLabels:
+      app: ai-inference
+  template:
+    metadata:
+      labels:
+        app: ai-inference
+    spec:
+      containers:
+      - name: inference-engine
+        image: nvidia/cuda:12.0.0-base-ubuntu22.04
+        command: ["sleep", "infinity"]
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Requesting 1 GPU
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
