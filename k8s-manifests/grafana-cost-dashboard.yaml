@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gpu-cost-analysis-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1" # This label makes Grafana auto-discover the dashboard
+spec:
+  gpu-cost-dashboard.json: |-
+    {
+      "title": "GPU Ops: Cost & Scale-to-Zero Analysis",
+      "tags": ["karpenter", "finops", "gpu"],
+      "timezone": "browser",
+      "refresh": "10s",
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Active GPU Nodes",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [
+            { "expr": "sum(kube_node_labels{label_karpenter_sh_nodepool=~\"gpu-.*\"}) or vector(0)", "legendFormat": "Nodes" }
+          ],
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 10 } ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Spot vs On-Demand Ratio",
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "targets": [
+            { "expr": "sum(kube_node_labels{label_karpenter_sh_nodepool=\"gpu-spot\"}) or vector(0)", "legendFormat": "Spot" },
+            { "expr": "sum(kube_node_labels{label_karpenter_sh_nodepool=\"gpu-on-demand\"}) or vector(0)", "legendFormat": "On-Demand" }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Active GPUs Over Time",
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 4 },
+          "targets": [
+            { "expr": "sum(kube_node_status_capacity{resource=\"nvidia.com/gpu\"}) by (node)", "legendFormat": "{{node}}" }
+          ],
+          "fieldConfig": { "defaults": { "custom": { "fillOpacity": 20, "lineWidth": 2 } } }
+        },
+        {
+          "type": "gauge",
+          "title": "Quota Utilization (10 GPUs Limit)",
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 4 },
+          "targets": [
+            { "expr": "sum(kube_node_status_capacity{resource=\"nvidia.com/gpu\"}) or vector(0)", "legendFormat": "GPUs Provisioned" }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "min": 0, "max": 10,
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 7 }, { "color": "red", "value": 10 } ] }
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Estimated Hourly Burn Rate (Spot vs On-Demand Model)",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 11 },
+          "targets": [
+            { "expr": "(sum(kube_node_labels{label_karpenter_sh_nodepool=\"gpu-spot-ai-research\"}) or vector(0)) * 0.52", "legendFormat": "Spot Burn ($/hr)" },
+            { "expr": "(sum(kube_node_labels{label_karpenter_sh_nodepool=\"gpu-on-demand-fallback\"}) or vector(0)) * 1.50", "legendFormat": "On-Demand Burn ($/hr)" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } }
+        },
+        {
+          "type": "gauge",
+          "title": "GPU Efficiency Score (%)",
+          "gridPos": { "h": 7, "w": 24, "x": 0, "y": 19 },
+          "targets": [
+            { 
+              "expr": "(sum(kube_pod_container_resource_requests{resource=\"nvidia.com/gpu\"}) / sum(kube_node_status_capacity{resource=\"nvidia.com/gpu\"})) * 100", 
+              "legendFormat": "Efficiency" 
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "min": 0, "max": 100,
+              "unit": "percent",
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 50 }, { "color": "green", "value": 85 } ] }
+            }
+          }
+        }
+      ]
+    }

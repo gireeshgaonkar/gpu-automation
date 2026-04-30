@@ -39,7 +39,13 @@
             </div>
         </header>
 
-        <div class="stats-grid">
+        <div class="alerts-container" style="margin-bottom: 24px;">
+            <div class="alert pending-alert" style="padding: 12px 16px; background: rgba(245, 166, 35, 0.1); border-left: 4px solid #f5a623; border-radius: 4px; color: #f5a623; display: flex; align-items: center; gap: 10px;">
+                <span class="icon">⏳</span> <strong>Pending Workloads:</strong> 2 Pods waiting for Spot GPU provision (Est. 90s remaining)
+            </div>
+        </div>
+
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
             <div class="stat-card primary">
                 <p class="label">Projected Annual Savings</p>
                 <h3>$16,842.40</h3>
@@ -47,13 +53,25 @@
             </div>
             <div class="stat-card">
                 <p class="label">Active GPU Nodes</p>
-                <h3>0</h3>
-                <p class="sub-label">Scale-to-Zero Active</p>
+                <h3>2</h3>
+                <p class="sub-label">Spinning up (Spot)</p>
+            </div>
+            <div class="stat-card">
+                <p class="label">Quota Utilization</p>
+                <h3>2 <span class="unit">/ 10 GPUs</span></h3>
+                <div class="progress-bar-container" style="background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden;">
+                    <div class="progress-bar" style="width: 20%; background-color: #4a90e2; height: 100%;"></div>
+                </div>
             </div>
             <div class="stat-card">
                 <p class="label">Current Burn Rate</p>
-                <h3>$0.00 <span class="unit">/ hr</span></h3>
-                <p class="sub-label">Baseline Core Nodes Only</p>
+                <h3>$1.05 <span class="unit">/ hr</span></h3>
+                <p class="sub-label">Spot pricing active</p>
+            </div>
+            <div class="stat-card">
+                <p class="label">Spot Interruptions (24h)</p>
+                <h3>1</h3>
+                <p class="sub-label" style="color: #f5a623;">Requeued successfully</p>
             </div>
         </div>
 
@@ -97,9 +115,9 @@
                         </tr>
                         <tr>
                             <td>i-9x8y7z6w</td>
-                            <td>t3.medium</td>
+                            <td>g4dn.xlarge</td>
                             <td><span class="badge on-demand">On-Demand</span></td>
-                            <td><span class="status running">Running</span></td>
+                            <td><span class="status running">Running (Fallback)</span></td>
                         </tr>
                     </tbody>
                 </table>
