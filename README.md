@@ -35,6 +35,3 @@ This project includes a custom validation suite to ensure infrastructure logic i
 ```bash
 python tests/validate_logic.py
 ```
-
----
-*Created as part of the €200k Staff Engineer Roadmap.*
